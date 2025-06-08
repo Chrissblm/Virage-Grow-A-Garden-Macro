@@ -1,4 +1,6 @@
-; Virage Grow a Garden Macro [BIZZY BEE UPDATE]
+; Virage Grow a Garden Macro [ENHANCED UPDATE]
+; Version: 2.1.0
+; Last Updated: June 2025
 
 #SingleInstance, Force
 #NoEnv
@@ -8,6 +10,11 @@ SetMouseDelay, -1
 SetWinDelay, -1
 SetControlDelay, -1
 SetBatchLines, -1   
+
+; version info
+global MACRO_VERSION := "2.1.2"
+global LAST_UPDATED := "June 2025"
+global BUILD_DATE := "2025-06-08"
 
 ; globals
 
@@ -30,10 +37,59 @@ global gearAutoActive := 0
 global eggAutoActive  := 0
 global safeCheckAutoActive := 0
 
-global triedVerify := 0 
+; Statistics tracking
+global statsStartTime := 0
+global totalItemsBought := 0
+global totalCyclesCompleted := 0
+global lastSessionStats := {}
+
+; Initialize statistics
+InitStats() {
+    statsStartTime := A_TickCount
+    totalItemsBought := 0
+    totalCyclesCompleted := 0
+}
+
+; Update statistics
+UpdateStats(action, itemCount := 1) {
+    if (action = "itemBought")
+        totalItemsBought += itemCount
+    else if (action = "cycleCompleted")
+        totalCyclesCompleted++
+}
+
+; Get runtime statistics
+GetStats() {
+    runtime := (A_TickCount - statsStartTime) / 1000 / 60  ; minutes
+    return "Runtime: " . Round(runtime, 1) . "m | Cycles: " . totalCyclesCompleted . " | Items: " . totalItemsBought
+}
+
+global triedVerify := 0
 
 
 global actionQueue := []
+
+; Enhanced logging system
+global logFile := A_ScriptDir "\macro_log.txt"
+global enableLogging := true
+
+; Write to log file
+WriteLog(message) {
+    if (!enableLogging)
+        return
+    
+    FormatTime, timestamp, , yyyy-MM-dd HH:mm:ss
+    logEntry := timestamp . " - " . message . "`n"
+    
+    FileAppend, %logEntry%, %logFile%
+}
+
+; Enhanced error handling
+HandleError(errorMsg, section := "") {
+    fullMsg := section ? "[" . section . "] " . errorMsg : errorMsg
+    WriteLog("ERROR: " . fullMsg)
+    SendDiscordMessage(webhookURL, "⚠️ ERROR: " . fullMsg . (PingSelected ? " <@" . discordUserID . ">" : ""))
+}
 
 settingsFile := A_ScriptDir "\settings.ini"
 
@@ -60,6 +116,28 @@ if (privateServerURL = "ERROR")
     privateServerURL := ""
 
 ; webhook functions and donate link opener
+
+CheckForUpdates() {
+    try {
+        whr := ComObjCreate("WinHttp.WinHttpRequest.5.1")
+        whr.Open("GET", "https://api.github.com/repos/VirageRoblox/Virage-Grow-A-Garden-Macro/releases/latest", false)
+        whr.Send()
+        whr.WaitForResponse()
+        
+        if (whr.Status = 200) {
+            response := whr.ResponseText
+            ; Simple version check - look for tag_name in JSON
+            RegExMatch(response, """tag_name"":""([^""]+)""", match)
+            if (match1 && match1 != MACRO_VERSION) {
+                MsgBox, 0x40, Update Available, A new version (%match1%) is available!`n`nCurrent: %MACRO_VERSION%`nLatest: %match1%`n`nVisit the GitHub releases page to download.
+                return true
+            }
+        }
+    } catch {
+        ; Silently fail if update check doesn't work
+    }
+    return false
+}
 
 SendDiscordMessage(webhookURL, message) {
 
@@ -479,7 +557,8 @@ seedItems := ["Carrot Seed", "Strawberry Seed", "Blueberry Seed", "Orange Tulip"
              , "Tomato Seed", "Corn Seed", "Daffodil Seed", "Watermelon Seed"
              , "Pumpkin Seed", "Apple Seed", "Bamboo Seed", "Coconut Seed"
              , "Cactus Seed", "Dragon Fruit Seed", "Mango Seed", "Grape Seed"
-             , "Mushroom Seed", "Pepper Seed", "Cacao Seed", "Beanstalk Seed"] ;
+             , "Mushroom Seed", "Pepper Seed", "Cacao Seed", "Beanstalk Seed"
+             , "Ember Lily"] ;
 
 gearItems := ["Watering Can", "Trowel", "Recall Wrench", "Basic Sprinkler", "Advanced Sprinkler"
              , "Godly Sprinkler", "Lightning Rod", "Master Sprinkler", "Favorite Tool", "Harvest Tool"]
@@ -507,7 +586,7 @@ ShowWelcome:
     Gui, 99: Margin, 10, 10
     Gui, 99: Add, Picture, x10 y0 w768 h432, %A_ScriptDir%\Images\welcome.png
     Gui, 99: Add, Button, x240 y+10 w300 h40 gContinue, Continue
-    Gui, 99: Show, w788 h492 Center, Virage Grow a Garden Macro [COSMETIC UPDATE]
+    Gui, 99: Show, w788 h492 Center, Virage Grow a Garden Macro [ENHANCED v%MACRO_VERSION%]
 return
 
 ShowVerify:
@@ -816,9 +895,7 @@ Gui, Add, Text,    x350 y360 w100 h24 +Right, 600
     Gui, Add, Link, x40 y264 w300 h16, Watch the latest macro <a href="https://youtu.be/L6GsrZYjECY">tutorial</a> on Youtube!
   
 
-
-
-    Gui, Show, w520 h425, Virage Grow a Garden Macro [BIZZY BEE UPDATE]
+    Gui, Show, w520 h425, Virage Grow a Garden Macro [ENHANCED v%MACRO_VERSION%]
 
 Return
 
