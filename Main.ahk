@@ -1705,12 +1705,12 @@ GearShopPath:
     uiUniversal("61616161606")
     Sleep, % FastMode ? 100 : 500
     Send {2}
-    Sleep, % FastMode ? 100 : 500
+    Sleep, % FastMode ? 100 : 500    
     SafeClickRelative(0.5, 0.5)
     Sleep, % FastMode ? 1200 : 2500
     Send {e}
     Sleep, % FastMode ? 3000 : 5000
-    SafeClickRelative(0.75, 0.48)
+    SafeClickRelative(0.75, 0.55)
     SendDiscordMessage(webhookURL, "**[GEAR CYCLE]**")
     Sleep, % FastMode ? 2500 : 5000
 
